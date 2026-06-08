@@ -35,7 +35,7 @@
 
     <nav class="relative flex justify-center px-[75px] mt-[30px]">
         <div class="flex items-center w-full max-w-[1130px] rounded-[20px] justify-between py-4 px-5 bg-white">
-            <a href="/">
+            <a href="/garuda/index.html">
                 <img src="/garuda/assets/images/logos/logo.svg" class="flex shrink-0 h-10" alt="logo">
             </a>
 
@@ -45,25 +45,23 @@
                         Flights
                     </a>
                 </li>
+
                 <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">
-                        Hotels
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">
+                    <a href="/available-flights" class="hover:font-bold transition-all duration-300">
                         Schedule
                     </a>
                 </li>
+
                 <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">
+                    <a href="/garuda/index.html#Testimonials" class="hover:font-bold transition-all duration-300">
                         Testimonials
                     </a>
                 </li>
             </ul>
 
-            <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                <a href="#" class="flex items-center rounded-full border border-garuda-black py-3 px-5 gap-[10px]">
+            <div class="flex items-center gap-3 shrink-0">
+                <a href="/garuda/call-us.html"
+                    class="flex items-center rounded-full border border-garuda-black py-3 px-5 gap-[10px]">
                     <img src="/garuda/assets/images/icons/call-calling-black.svg" class="w-5 h-5 flex shrink-0" alt="icon">
                     <span class="font-semibold">Call Us</span>
                 </a>
@@ -118,7 +116,7 @@
                 <div id="Flights" class="flex flex-col gap-4">
                     <p class="font-semibold">Flights</p>
 
-                    <label class="flex items-center gap-[10px]">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="flight_type" value="direct"
                             onchange="this.form.submit()"
                             {{ request('flight_type') === 'direct' ? 'checked' : '' }}
@@ -126,15 +124,19 @@
                         <span class="font-semibold">Direct Flight</span>
                     </label>
 
-                    <label class="flex items-center gap-[10px] opacity-50">
-                        <input type="checkbox" disabled
-                            class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
+                        <input type="checkbox" name="flight_type" value="transit_1x"
+                            onchange="this.form.submit()"
+                            {{ request('flight_type') === 'transit_1x' ? 'checked' : '' }}
+                            class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <span class="font-semibold">Transit 1x</span>
                     </label>
 
-                    <label class="flex items-center gap-[10px] opacity-50">
-                        <input type="checkbox" disabled
-                            class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
+                        <input type="checkbox" name="flight_type" value="transit_2x"
+                            onchange="this.form.submit()"
+                            {{ request('flight_type') === 'transit_2x' ? 'checked' : '' }}
+                            class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <span class="font-semibold">Transit 2x</span>
                     </label>
                 </div>
@@ -176,7 +178,7 @@
                         <p class="text-sm text-garuda-grey">Belum ada maskapai.</p>
                     @endforelse
 
-                    @if (request()->filled('airlines') || request()->filled('destination') || request()->filled('arrival') || request()->filled('date'))
+                    @if (request()->filled('airlines') || request()->filled('destination') || request()->filled('arrival') || request()->filled('date') || request()->filled('flight_type') || request()->filled('facilities'))
                         <a href="{{ route('flights.available') }}"
                             class="mt-2 w-full rounded-full py-3 px-5 text-center bg-garuda-black text-white font-semibold">
                             Reset Filter
@@ -189,36 +191,46 @@
                 <div id="Facilities" class="flex flex-col gap-4">
                     <p class="font-semibold">Facilities</p>
 
-                    <label class="flex items-center gap-[10px] opacity-70">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="baggage"
+                            onchange="this.form.submit()"
+                            {{ in_array('baggage', request('facilities', [])) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/box-black.svg" alt="icon">
                         <span class="font-semibold">Baggage</span>
                     </label>
 
-                    <label class="flex items-center gap-[10px] opacity-70">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="entertainment"
+                            onchange="this.form.submit()"
+                            {{ in_array('entertainment', request('facilities', [])) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/video-play-black.svg" alt="icon">
                         <span class="font-semibold">Entertainment</span>
                     </label>
 
-                    <label class="flex items-center gap-[10px] opacity-70">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="usb"
+                            onchange="this.form.submit()"
+                            {{ in_array('usb', request('facilities', [])) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/electricity-black.svg" alt="icon">
                         <span class="font-semibold">USB C and Port</span>
                     </label>
 
-                    <label class="flex items-center gap-[10px] opacity-70">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="wifi"
+                            onchange="this.form.submit()"
+                            {{ in_array('wifi', request('facilities', [])) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/wifi-black.svg" alt="icon">
                         <span class="font-semibold">Wi-Fi Onboard</span>
                     </label>
 
-                    <label class="flex items-center gap-[10px] opacity-70">
+                    <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="meals"
+                            onchange="this.form.submit()"
+                            {{ in_array('meals', request('facilities', [])) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/coffee-black.svg" alt="icon">
                         <span class="font-semibold">Heavy Meals</span>
@@ -246,6 +258,14 @@
                         } else {
                             $flightLogo = 'ana.svg';
                         }
+
+                        $flightTypeText = 'Direct Flight';
+
+                        if ($flight->flight_type === 'transit_1x') {
+                            $flightTypeText = 'Transit 1x';
+                        } elseif ($flight->flight_type === 'transit_2x') {
+                            $flightTypeText = 'Transit 2x';
+                        }
                     @endphp
 
                     <div
@@ -255,7 +275,7 @@
                             <input type="checkbox" name="accordion-input" class="hidden" checked>
 
                             <div class="flex items-center gap-[10px]">
-                                <img src="/garuda/assets/images/logos/{{ $flightLogo }}" class="w-[60px] h-[60px] flex shrink-0" alt="logo">
+                                <img src="/garuda/assets/images/logos/{{ $flightLogo }}" class="w-[60px] h-[60px] flex shrink-0 object-contain" alt="logo">
 
                                 <div>
                                     <p class="font-semibold">{{ $flight->airline }}</p>
@@ -266,7 +286,7 @@
                             </div>
 
                             <div class="flex flex-col gap-[2px] items-center justify-center">
-                                <p class="text-sm text-garuda-grey">Direct Flight</p>
+                                <p class="text-sm text-garuda-grey">{{ $flightTypeText }}</p>
 
                                 <div class="flex items-center gap-[6px]">
                                     <p class="font-semibold">{{ strtoupper(substr($flight->origin, 0, 3)) }}</p>
@@ -339,57 +359,67 @@
                             <div
                                 class="grid grid-cols-2 w-[320px] shrink-0 h-fit p-5 gap-y-6 justify-between rounded-[30px] bg-garuda-bg-grey">
 
-                                <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                                    <img src="/garuda/assets/images/icons/box-black.svg" class="w-6 h-6 flex shrink-0" alt="icon">
-                                    <div>
-                                        <p class="font-semibold text-sm">Baggages</p>
-                                        <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                @if ($flight->has_baggage)
+                                    <div class="flex items-center gap-3 even:w-[139px] shrink-0">
+                                        <img src="/garuda/assets/images/icons/box-black.svg" class="w-6 h-6 flex shrink-0" alt="icon">
+                                        <div>
+                                            <p class="font-semibold text-sm">Baggages</p>
+                                            <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
 
-                                <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                                    <img src="/garuda/assets/images/icons/video-play-black.svg" class="w-6 h-6 flex shrink-0"
-                                        alt="icon">
-                                    <div>
-                                        <p class="font-semibold text-sm">Entertainment</p>
-                                        <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                @if ($flight->has_entertainment)
+                                    <div class="flex items-center gap-3 even:w-[139px] shrink-0">
+                                        <img src="/garuda/assets/images/icons/video-play-black.svg" class="w-6 h-6 flex shrink-0"
+                                            alt="icon">
+                                        <div>
+                                            <p class="font-semibold text-sm">Entertainment</p>
+                                            <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
 
-                                <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                                    <img src="/garuda/assets/images/icons/electricity-black.svg" class="w-6 h-6 flex shrink-0"
-                                        alt="icon">
-                                    <div>
-                                        <p class="font-semibold text-sm">USB C Port</p>
-                                        <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                @if ($flight->has_usb)
+                                    <div class="flex items-center gap-3 even:w-[139px] shrink-0">
+                                        <img src="/garuda/assets/images/icons/electricity-black.svg" class="w-6 h-6 flex shrink-0"
+                                            alt="icon">
+                                        <div>
+                                            <p class="font-semibold text-sm">USB C Port</p>
+                                            <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
 
-                                <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                                    <img src="/garuda/assets/images/icons/coffee-black.svg" class="w-6 h-6 flex shrink-0"
-                                        alt="icon">
-                                    <div>
-                                        <p class="font-semibold text-sm">Heavy Meals</p>
-                                        <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                @if ($flight->has_meals)
+                                    <div class="flex items-center gap-3 even:w-[139px] shrink-0">
+                                        <img src="/garuda/assets/images/icons/coffee-black.svg" class="w-6 h-6 flex shrink-0"
+                                            alt="icon">
+                                        <div>
+                                            <p class="font-semibold text-sm">Heavy Meals</p>
+                                            <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
 
                                 <div class="flex items-center gap-3 even:w-[139px] shrink-0">
                                     <img src="/garuda/assets/images/icons/security-user-black.svg" class="w-6 h-6 flex shrink-0"
                                         alt="icon">
                                     <div>
-                                        <p class="font-semibold text-sm">Lifeguard</p>
+                                        <p class="font-semibold text-sm">Safety Support</p>
                                         <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
                                     </div>
                                 </div>
 
-                                <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                                    <img src="/garuda/assets/images/icons/wifi-black.svg" class="w-6 h-6 flex shrink-0" alt="icon">
-                                    <div>
-                                        <p class="font-semibold text-sm">Wi-fi Onboard</p>
-                                        <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                @if ($flight->has_wifi)
+                                    <div class="flex items-center gap-3 even:w-[139px] shrink-0">
+                                        <img src="/garuda/assets/images/icons/wifi-black.svg" class="w-6 h-6 flex shrink-0" alt="icon">
+                                        <div>
+                                            <p class="font-semibold text-sm">Wi-fi Onboard</p>
+                                            <p class="text-xs leading-[18px] text-garuda-grey">Included</p>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
