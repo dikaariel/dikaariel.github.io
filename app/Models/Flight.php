@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Flight extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'airline',
+        'flight_number',
+        'origin',
+        'destination',
+        'departure_date',
+        'departure_time',
+        'arrival_time',
+        'seats',
+        'price',
+    ];
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+}
