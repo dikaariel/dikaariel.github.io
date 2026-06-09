@@ -10,24 +10,75 @@
 </head>
 
 @php
-    $tier = $tier ?? request('tier', 'economy');
-    $quantity = (int) ($quantity ?? request('quantity', 1));
+    $tier = strtolower(request('tier', $tier ?? 'economy'));
+    $quantity = (int) request('quantity', $quantity ?? 1);
 
     if ($quantity < 1) {
         $quantity = 1;
     }
 
-    $className = $tier === 'business' ? 'Business Class' : 'Economy Class';
+    $classLabel = request('class') ?: ($tier === 'business' ? 'Business' : 'Economy');
+    $className = str_contains(strtolower($classLabel), 'class') ? $classLabel : $classLabel . ' Class';
+
     $seatImage = $tier === 'business' ? 'business-seat.png' : 'economy-seat.png';
-    $pricePerTicket = $tier === 'business' ? $flight->price + 2000000 : $flight->price;
+
+    $defaultPrice = $tier === 'business'
+        ? (int) $flight->price + 2000000
+        : (int) $flight->price;
+
+    $pricePerTicket = (int) request('price', $defaultPrice);
 
     $subTotal = $pricePerTicket * $quantity;
     $tax = round($subTotal * 0.11);
     $grandTotal = $subTotal + $tax;
 
-    $displayDate = \Carbon\Carbon::parse($flight->departure_date)->format('d M Y');
-    $originCode = strtoupper(substr($flight->origin, 0, 3));
-    $destinationCode = strtoupper(substr($flight->destination, 0, 3));
+    $selectedDeparture = request('departure') ?: request('origin') ?: $flight->origin;
+    $selectedArrival = request('arrival') ?: request('destination') ?: $flight->destination;
+
+    $selectedDeparture = trim(preg_replace('/\s*\(.*?\)\s*/', '', $selectedDeparture));
+    $selectedArrival = trim(preg_replace('/\s*\(.*?\)\s*/', '', $selectedArrival));
+
+    if ($selectedDeparture === '' || $selectedDeparture === 'Select Departure') {
+        $selectedDeparture = $flight->origin;
+    }
+
+    if ($selectedArrival === '' || $selectedArrival === 'Pilih Tujuan' || $selectedArrival === 'Select Arrival') {
+        $selectedArrival = $flight->destination;
+    }
+
+    $rawDate = request('date') ?: $flight->departure_date;
+
+    $displayDate = request('date')
+        ? \Carbon\Carbon::parse(request('date'))->format('d M Y')
+        : \Carbon\Carbon::parse($flight->departure_date)->format('d M Y');
+
+    $originCode = strtoupper(substr($selectedDeparture, 0, 3));
+    $destinationCode = strtoupper(substr($selectedArrival, 0, 3));
+
+    $flightAirlineLower = strtolower($flight->airline);
+
+    if (str_contains($flightAirlineLower, 'emirate')) {
+        $flightLogo = 'emirates.svg';
+    } elseif (str_contains($flightAirlineLower, 'singapore')) {
+        $flightLogo = 'singapore-airlines.svg';
+    } else {
+        $flightLogo = 'ana.svg';
+    }
+
+    $flightTypeText = 'Direct Flight';
+
+    if ($flight->flight_type === 'transit_1x') {
+        $flightTypeText = 'Transit 1x';
+    } elseif ($flight->flight_type === 'transit_2x') {
+        $flightTypeText = 'Transit 2x';
+    }
+
+    $backQuery = http_build_query([
+        'quantity' => $quantity,
+        'date' => $rawDate,
+        'departure' => $selectedDeparture,
+        'arrival' => $selectedArrival,
+    ]);
 
     $disabledSeats = ['A1', 'B3', 'B4', 'D2', 'D3', 'D4', 'E4', 'F4', 'G4'];
     $rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
@@ -43,27 +94,33 @@
 
     <nav class="relative flex justify-center px-[75px] mt-[30px]">
         <div class="flex items-center w-full max-w-[1130px] rounded-[20px] justify-between py-4 px-5 bg-white">
-            <a href="/">
+            <a href="/garuda/index.html">
                 <img src="/garuda/assets/images/logos/logo.svg" class="flex shrink-0 h-10" alt="logo">
             </a>
 
             <ul class="flex items-center gap-[30px] flex-wrap">
                 <li>
-                    <a href="/available-flights" class="hover:font-bold transition-all duration-300 font-bold">Flights</a>
+                    <a href="/available-flights" class="hover:font-bold transition-all duration-300 font-bold">
+                        Flights
+                    </a>
                 </li>
+
                 <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">Hotels</a>
+                    <a href="/available-flights" class="hover:font-bold transition-all duration-300">
+                        Schedule
+                    </a>
                 </li>
+
                 <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">Schedule</a>
-                </li>
-                <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">Testimonials</a>
+                    <a href="/garuda/index.html#Testimonials" class="hover:font-bold transition-all duration-300">
+                        Testimonials
+                    </a>
                 </li>
             </ul>
 
-            <div class="flex items-center gap-3 even:w-[139px] shrink-0">
-                <a href="#" class="flex items-center rounded-full border border-garuda-black py-3 px-5 gap-[10px]">
+            <div class="flex items-center gap-3 shrink-0">
+                <a href="/garuda/call-us.html"
+                    class="flex items-center rounded-full border border-garuda-black py-3 px-5 gap-[10px]">
                     <img src="/garuda/assets/images/icons/call-calling-black.svg" class="w-5 h-5 flex shrink-0" alt="icon">
                     <span class="font-semibold">Call Us</span>
                 </a>
@@ -80,10 +137,10 @@
     <main class="relative flex flex-col w-full max-w-[1280px] px-[75px] mx-auto mt-[50px] mb-[62px]">
         <div class="flex">
             <div id="Left-Content" class="flex flex-col gap-[30px] w-[470px] shrink-0">
-                <a href="{{ route('booking.tiers', $flight->id) }}?quantity={{ $quantity }}"
+                <a href="{{ route('booking.tiers', $flight->id) }}?{{ $backQuery }}"
                     class="flex items-center rounded-[50px] py-3 px-5 gap-[10px] w-fit bg-garuda-black">
                     <img src="/garuda/assets/images/icons/arrow-left-white.svg" class="w-6 h-6" alt="icon">
-                    <p class="font-semibold text-white">Back to Choose Flight</p>
+                    <p class="font-semibold text-white">Back to Choose Class</p>
                 </a>
 
                 <h1 class="font-extrabold text-[50px] leading-[75px]">Choose Seats</h1>
@@ -101,12 +158,12 @@
                         <div class="flex justify-between">
                             <div>
                                 <p class="text-sm text-garuda-grey">Departure</p>
-                                <p class="font-semibold text-lg">{{ $flight->origin }}</p>
+                                <p class="font-semibold text-lg">{{ $selectedDeparture }}</p>
                             </div>
 
                             <div class="text-end">
                                 <p class="text-sm text-garuda-grey">Arrival</p>
-                                <p class="font-semibold text-lg">{{ $flight->destination }}</p>
+                                <p class="font-semibold text-lg">{{ $selectedArrival }}</p>
                             </div>
                         </div>
 
@@ -126,8 +183,8 @@
                             <div class="flex flex-col gap-4">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-[10px]">
-                                        <img src="/garuda/assets/images/logos/ana.svg" class="h-[100px] flex shrink-0"
-                                            alt="logo">
+                                        <img src="/garuda/assets/images/logos/{{ $flightLogo }}"
+                                            class="h-[100px] flex shrink-0 object-contain" alt="logo">
                                     </div>
 
                                     <a href="#"
@@ -145,7 +202,7 @@
                                     </div>
 
                                     <div class="flex flex-col gap-[2px] items-center justify-center">
-                                        <p class="text-sm text-garuda-grey">Direct Flight</p>
+                                        <p class="text-sm text-garuda-grey">{{ $flightTypeText }}</p>
                                         <div class="flex items-center gap-[6px]">
                                             <p class="font-semibold">{{ $originCode }}</p>
                                             <img src="/garuda/assets/images/icons/direct-black.svg" alt="icon">
@@ -252,7 +309,12 @@
                         class="relative px-[56px] pb-[60px]" id="form-seat">
 
                         <input type="hidden" name="tier" value="{{ $tier }}">
+                        <input type="hidden" name="class" value="{{ $classLabel }}">
+                        <input type="hidden" name="price" value="{{ $pricePerTicket }}">
                         <input type="hidden" name="quantity" value="{{ $quantity }}">
+                        <input type="hidden" name="date" value="{{ $rawDate }}">
+                        <input type="hidden" name="departure" value="{{ $selectedDeparture }}">
+                        <input type="hidden" name="arrival" value="{{ $selectedArrival }}">
                         <input type="hidden" name="seats" id="seatsInput" value="">
 
                         <p class="text-center font-bold text-xl leading-[30px]">{{ $className }}</p>
