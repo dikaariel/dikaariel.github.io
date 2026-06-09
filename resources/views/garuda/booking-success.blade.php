@@ -62,6 +62,21 @@
     $pricePerTicket = $meta['price_per_ticket'] ?? $flight->price;
     $passengers = $meta['passengers'] ?? [];
 
+    $selectedDate = $meta['selected_date'] ?? $flight->departure_date;
+    $selectedDeparture = $meta['selected_departure'] ?? $flight->origin;
+    $selectedArrival = $meta['selected_arrival'] ?? $flight->destination;
+
+    $selectedDeparture = trim(preg_replace('/\s*\(.*?\)\s*/', '', $selectedDeparture));
+    $selectedArrival = trim(preg_replace('/\s*\(.*?\)\s*/', '', $selectedArrival));
+
+    if ($selectedDeparture === '' || $selectedDeparture === 'Select Departure') {
+        $selectedDeparture = $flight->origin;
+    }
+
+    if ($selectedArrival === '' || $selectedArrival === 'Pilih Tujuan' || $selectedArrival === 'Select Arrival') {
+        $selectedArrival = $flight->destination;
+    }
+
     $quantity = $booking->quantity ?? 1;
     $className = $tier === 'business' ? 'Business Class' : 'Economy Class';
     $seatImage = $tier === 'business' ? 'business-seat.png' : 'economy-seat.png';
@@ -70,9 +85,12 @@
     $tax = round($subTotal * 0.11);
     $grandTotal = $subTotal + $tax;
 
-    $displayDate = \Carbon\Carbon::parse($flight->departure_date)->format('d M Y');
-    $originCode = strtoupper(substr($flight->origin, 0, 3));
-    $destinationCode = strtoupper(substr($flight->destination, 0, 3));
+    $displayDate = \Carbon\Carbon::parse($selectedDate)->format('d M Y');
+    $originCode = strtoupper(substr($selectedDeparture, 0, 3));
+    $destinationCode = strtoupper(substr($selectedArrival, 0, 3));
+
+    $paymentStatus = strtolower($booking->status ?? 'pending');
+    $isPaid = $paymentStatus === 'confirmed' || $paymentStatus === 'success';
 @endphp
 
 <body class="font-[Poppins] bg-[#F3F6FD]">
@@ -84,7 +102,7 @@
 
     <nav class="no-print relative flex justify-center px-[75px] mt-[30px]">
         <div class="flex items-center w-full max-w-[1130px] rounded-[20px] justify-between py-4 px-5 bg-white">
-            <a href="/">
+            <a href="/garuda/index.html">
                 <img src="/garuda/assets/images/logos/logo.svg" class="flex shrink-0 h-10" alt="logo">
             </a>
 
@@ -94,25 +112,23 @@
                         Flights
                     </a>
                 </li>
+
                 <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">
-                        Hotels
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">
+                    <a href="/available-flights" class="hover:font-bold transition-all duration-300">
                         Schedule
                     </a>
                 </li>
+
                 <li>
-                    <a href="#" class="hover:font-bold transition-all duration-300">
+                    <a href="/garuda/index.html#Testimonials" class="hover:font-bold transition-all duration-300">
                         Testimonials
                     </a>
                 </li>
             </ul>
 
             <div class="flex items-center gap-3">
-                <a href="#" class="flex items-center rounded-full border border-garuda-black py-3 px-5 gap-[10px]">
+                <a href="/garuda/call-us.html"
+                    class="flex items-center rounded-full border border-garuda-black py-3 px-5 gap-[10px]">
                     <img src="/garuda/assets/images/icons/call-calling-black.svg" class="w-5 h-5 flex shrink-0" alt="icon">
                     <span class="font-semibold">Call Us</span>
                 </a>
@@ -130,6 +146,12 @@
         <h1 class="font-extrabold text-[50px] leading-[75px] mb-[30px]">
             Booking Details
         </h1>
+
+        @if (session('success'))
+            <div class="no-print rounded-[20px] bg-[#D1FADF] text-[#027A48] font-semibold px-5 py-4 mb-5">
+                {{ session('success') }}
+            </div>
+        @endif
 
         <div class="flex gap-[30px] items-start">
             <div id="Left-Content" class="flex flex-col gap-[30px] w-[470px] shrink-0">
@@ -149,12 +171,12 @@
                         <div class="flex justify-between">
                             <div>
                                 <p class="text-sm text-garuda-grey">Departure</p>
-                                <p class="font-semibold text-lg">{{ $flight->origin }}</p>
+                                <p class="font-semibold text-lg">{{ $selectedDeparture }}</p>
                             </div>
 
                             <div class="text-end">
                                 <p class="text-sm text-garuda-grey">Arrival</p>
-                                <p class="font-semibold text-lg">{{ $flight->destination }}</p>
+                                <p class="font-semibold text-lg">{{ $selectedArrival }}</p>
                             </div>
                         </div>
 
@@ -246,15 +268,15 @@
                                     {{ $booking->booking_code }}
                                 </p>
 
-                                <div class="flex items-center gap-2">
+                                @if ($isPaid)
+                                    <span class="rounded-full bg-[#079455] text-white px-3 py-1 text-xs font-bold">
+                                        CONFIRMED
+                                    </span>
+                                @else
                                     <span class="rounded-full bg-[#FFA44B] text-garuda-black px-3 py-1 text-xs font-bold">
                                         PENDING
                                     </span>
-
-                                    <span class="rounded-full bg-[#079455] text-white px-3 py-1 text-xs font-bold">
-                                        SUCCESS
-                                    </span>
-                                </div>
+                                @endif
                             </div>
                         </div>
 
@@ -433,6 +455,20 @@
                 @endforeach
 
                 <div class="no-print flex flex-col gap-3">
+                    @if (!$isPaid)
+                        <form action="{{ route('booking.pay', $booking->id) }}" method="POST" class="w-full">
+                            @csrf
+                            <button type="submit"
+                                class="w-full rounded-full py-4 px-5 text-center bg-[#079455] hover:opacity-90 transition-all duration-300">
+                                <span class="font-semibold text-white">Pay Now</span>
+                            </button>
+                        </form>
+                    @else
+                        <div class="w-full rounded-full py-4 px-5 text-center bg-[#D1FADF] text-[#027A48] font-semibold">
+                            Payment Confirmed
+                        </div>
+                    @endif
+
                     <button onclick="window.print()"
                         class="w-full rounded-full py-4 px-5 text-center bg-garuda-blue hover:shadow-[0px_14px_30px_0px_#0068FF66] transition-all duration-300">
                         <span class="font-semibold text-white">Download PDF Version</span>

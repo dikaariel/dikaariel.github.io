@@ -55,6 +55,9 @@ Route::middleware('auth')->group(function () {
     // Halaman booking berhasil
     Route::get('/booking-success/{booking}', [BookingController::class, 'success'])->name('booking.success');
 
+    // Konfirmasi pembayaran / Pay Now
+    Route::post('/booking/{booking}/pay', [BookingController::class, 'pay'])->name('booking.pay');
+
     // Halaman riwayat booking user
     Route::get('/my-booking', [BookingController::class, 'index'])->name('booking.index');
 
