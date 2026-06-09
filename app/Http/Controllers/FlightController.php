@@ -42,13 +42,25 @@ class FlightController extends Controller
     |--------------------------------------------------------------------------
     | Available Flights User
     |--------------------------------------------------------------------------
-    | Menampilkan data penerbangan berdasarkan filter dari user.
+    | Menampilkan data penerbangan.
+    |
+    | Catatan:
+    | - Departure bebas dipilih user.
+    | - Arrival bebas dipilih user.
+    | - Date bebas dipilih user.
+    | - Departure, Arrival, dan Date TIDAK dipakai untuk filter database.
+    | - Jadi penerbangan tetap muncul walaupun user memilih tanggal/tujuan bebas.
+    | - Filter yang tetap aktif: Airlines, Flight Type, dan Facilities.
     */
     public function available(Request $request)
     {
         $query = Flight::query();
 
-        // Filter maskapai
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Maskapai
+        |--------------------------------------------------------------------------
+        */
         if ($request->filled('airlines')) {
             $selectedAirlines = $request->airlines;
 
@@ -59,31 +71,33 @@ class FlightController extends Controller
             $query->whereIn('airline', $selectedAirlines);
         }
 
-        // Filter asal keberangkatan
-        if ($request->filled('origin')) {
-            $query->where('origin', 'like', '%' . $request->origin . '%');
-        }
+        /*
+        |--------------------------------------------------------------------------
+        | Departure, Arrival, dan Date sengaja tidak difilter
+        |--------------------------------------------------------------------------
+        | Bagian ini dibuat supaya user bebas memilih:
+        | - Kota asal
+        | - Kota tujuan
+        | - Tanggal penerbangan
+        |
+        | Data penerbangan tetap muncul dari database.
+        | Tanggal dan tujuan pilihan user nanti hanya ditampilkan di halaman berikutnya.
+        */
 
-        // Filter tujuan
-        if ($request->filled('destination')) {
-            $query->where('destination', 'like', '%' . $request->destination . '%');
-        }
-
-        if ($request->filled('arrival')) {
-            $query->where('destination', 'like', '%' . $request->arrival . '%');
-        }
-
-        // Filter tanggal
-        if ($request->filled('date')) {
-            $query->whereDate('departure_date', $request->date);
-        }
-
-        // Filter jenis penerbangan
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Jenis Penerbangan
+        |--------------------------------------------------------------------------
+        */
         if ($request->filled('flight_type')) {
             $query->where('flight_type', $request->flight_type);
         }
 
-        // Filter fasilitas
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Fasilitas
+        |--------------------------------------------------------------------------
+        */
         if ($request->filled('facilities')) {
             $facilities = $request->facilities;
 
@@ -114,11 +128,20 @@ class FlightController extends Controller
             }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Ambil Data Penerbangan
+        |--------------------------------------------------------------------------
+        */
         $flights = $query
-            ->orderBy('departure_date', 'asc')
             ->orderBy('departure_time', 'asc')
             ->get();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Data Pilihan Maskapai untuk Filter
+        |--------------------------------------------------------------------------
+        */
         $airlineOptions = Flight::select('airline')
             ->distinct()
             ->orderBy('airline', 'asc')
@@ -209,7 +232,7 @@ class FlightController extends Controller
     */
     public function edit(Flight $flight)
     {
-        return view('flights.edit', compact('flight'));
+        return view('flights.edit');
     }
 
     /*

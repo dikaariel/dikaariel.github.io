@@ -20,10 +20,17 @@
     }
 
     $selectedAirlines = request('airlines', []);
-
     if (!is_array($selectedAirlines)) {
         $selectedAirlines = [$selectedAirlines];
     }
+
+    $selectedFacilities = request('facilities', []);
+    if (!is_array($selectedFacilities)) {
+        $selectedFacilities = [$selectedFacilities];
+    }
+
+    $cleanDepartureText = trim(preg_replace('/\s*\(.*?\)\s*/', '', $departureText));
+    $cleanArrivalText = trim(preg_replace('/\s*\(.*?\)\s*/', '', $arrivalText));
 @endphp
 
 <body>
@@ -194,7 +201,7 @@
                     <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="baggage"
                             onchange="this.form.submit()"
-                            {{ in_array('baggage', request('facilities', [])) ? 'checked' : '' }}
+                            {{ in_array('baggage', $selectedFacilities) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/box-black.svg" alt="icon">
                         <span class="font-semibold">Baggage</span>
@@ -203,7 +210,7 @@
                     <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="entertainment"
                             onchange="this.form.submit()"
-                            {{ in_array('entertainment', request('facilities', [])) ? 'checked' : '' }}
+                            {{ in_array('entertainment', $selectedFacilities) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/video-play-black.svg" alt="icon">
                         <span class="font-semibold">Entertainment</span>
@@ -212,7 +219,7 @@
                     <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="usb"
                             onchange="this.form.submit()"
-                            {{ in_array('usb', request('facilities', [])) ? 'checked' : '' }}
+                            {{ in_array('usb', $selectedFacilities) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/electricity-black.svg" alt="icon">
                         <span class="font-semibold">USB C and Port</span>
@@ -221,7 +228,7 @@
                     <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="wifi"
                             onchange="this.form.submit()"
-                            {{ in_array('wifi', request('facilities', [])) ? 'checked' : '' }}
+                            {{ in_array('wifi', $selectedFacilities) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/wifi-black.svg" alt="icon">
                         <span class="font-semibold">Wi-Fi Onboard</span>
@@ -230,7 +237,7 @@
                     <label class="flex items-center gap-[10px] cursor-pointer">
                         <input type="checkbox" name="facilities[]" value="meals"
                             onchange="this.form.submit()"
-                            {{ in_array('meals', request('facilities', [])) ? 'checked' : '' }}
+                            {{ in_array('meals', $selectedFacilities) ? 'checked' : '' }}
                             class="flex w-6 h-6 shrink-0 appearance-none outline-none rounded-lg ring-1 ring-garuda-black border border-white checked:bg-black checked:border-[5px]">
                         <img src="/garuda/assets/images/icons/coffee-black.svg" alt="icon">
                         <span class="font-semibold">Heavy Meals</span>
@@ -266,6 +273,25 @@
                         } elseif ($flight->flight_type === 'transit_2x') {
                             $flightTypeText = 'Transit 2x';
                         }
+
+                        $displayDeparture = $cleanDepartureText && $cleanDepartureText !== 'Select Departure'
+                            ? $cleanDepartureText
+                            : $flight->origin;
+
+                        $displayArrival = $cleanArrivalText && $cleanArrivalText !== 'Pilih Tujuan' && $cleanArrivalText !== 'Select Arrival'
+                            ? $cleanArrivalText
+                            : $flight->destination;
+
+                        $displayDate = request('date')
+                            ? \Carbon\Carbon::parse(request('date'))->format('d M Y')
+                            : \Carbon\Carbon::parse($flight->departure_date)->format('d M Y');
+
+                        $chooseQuery = http_build_query([
+                            'quantity' => $quantity,
+                            'date' => request('date'),
+                            'departure' => $departureText,
+                            'arrival' => $arrivalText,
+                        ]);
                     @endphp
 
                     <div
@@ -289,9 +315,9 @@
                                 <p class="text-sm text-garuda-grey">{{ $flightTypeText }}</p>
 
                                 <div class="flex items-center gap-[6px]">
-                                    <p class="font-semibold">{{ strtoupper(substr($flight->origin, 0, 3)) }}</p>
+                                    <p class="font-semibold">{{ strtoupper(substr($displayDeparture, 0, 3)) }}</p>
                                     <img src="/garuda/assets/images/icons/direct-black.svg" alt="icon">
-                                    <p class="font-semibold">{{ strtoupper(substr($flight->destination, 0, 3)) }}</p>
+                                    <p class="font-semibold">{{ strtoupper(substr($displayArrival, 0, 3)) }}</p>
                                 </div>
 
                                 <p class="text-sm text-garuda-grey">{{ $flight->flight_number }}</p>
@@ -301,7 +327,7 @@
                                 Rp {{ number_format($flight->price, 0, ',', '.') }}
                             </p>
 
-                            <a href="{{ route('booking.tiers', $flight->id) }}?quantity={{ $quantity }}&date={{ request('date') }}"
+                            <a href="{{ route('booking.tiers', $flight->id) }}?{{ $chooseQuery }}"
                                 class="rounded-full py-3 px-5 text-center bg-garuda-blue hover:shadow-[0px_14px_30px_0px_#0068FF66] transition-all duration-300">
                                 <span class="font-semibold text-white">Choose</span>
                             </a>
@@ -315,7 +341,7 @@
                                     <div class="text-center w-[83px]">
                                         <p class="font-semibold">{{ $flight->departure_time }}</p>
                                         <p class="text-sm text-garuda-grey mt-[2px]">
-                                            {{ \Carbon\Carbon::parse($flight->departure_date)->format('d M Y') }}
+                                            {{ $displayDate }}
                                         </p>
                                     </div>
 
@@ -325,7 +351,7 @@
 
                                         <div>
                                             <p class="text-sm text-garuda-grey mt-[2px]">Departure</p>
-                                            <p class="font-semibold">{{ $flight->origin }}</p>
+                                            <p class="font-semibold">{{ $displayDeparture }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -340,7 +366,7 @@
                                     <div class="text-center w-[83px]">
                                         <p class="font-semibold">{{ $flight->arrival_time }}</p>
                                         <p class="text-sm text-garuda-grey mt-[2px]">
-                                            {{ \Carbon\Carbon::parse($flight->departure_date)->format('d M Y') }}
+                                            {{ $displayDate }}
                                         </p>
                                     </div>
 
@@ -350,7 +376,7 @@
 
                                         <div>
                                             <p class="text-sm text-garuda-grey mt-[2px]">Arrival</p>
-                                            <p class="font-semibold">{{ $flight->destination }}</p>
+                                            <p class="font-semibold">{{ $displayArrival }}</p>
                                         </div>
                                     </div>
                                 </div>
